@@ -1,0 +1,164 @@
+#!/usr/bin/env lua
+
+require "luarocks.loader"
+require "game"
+
+local function load_species(game, path)
+    -- File with species definition should end with a return statement that
+    -- gives back a table defining the species.
+    -- Load the file in a sand box environment, and add species to the game.
+
+    local species_code, err = loadfile(path)
+    if not species_code then
+        error(err)
+    end
+
+    setfenv(species_code, game:create_sandbox())
+
+    local success, result = pcall(species_code)
+    if not success then
+        error(result)
+    end
+
+    if not result.name then
+        error("Species do not define name " .. path)
+    end
+
+    game:add_species(result)
+
+    return result.name
+end
+
+local function parse_arguments()
+    local argparse = require "argparse"
+    local parser = argparse()
+
+    parser:option "--randomseed"
+        :args "1"
+        :convert(tonumber)
+        :description "seed for random numbers"
+    parser:option "--size"
+        :args "2"
+        :argname {"<x>", "<y>"}
+        :convert(tonumber)
+        :description "size of the game world"
+
+    local q = parser:command "qualification"
+    q:option "--turns"
+        :convert(tonumber)
+        :default "10000"
+        :description "how many turns to run"
+    q:option "--ecosystem"
+        :args "+"
+        :description "files with ecosystem species"
+    q:option "--player"
+        :args "1"
+        :convert(function(a) return {a} end)
+        :description "file with species to be qualified for the tournament"
+
+    local t = parser:command "tournament"
+    t:option "--ecosystem"
+        :args "+"
+        :description "files with ecosystem species"
+    t:option "--player"
+        :args "+"
+        :description "files with species to take part in tournament"
+
+q:description
+[[Qualification is a special mode of the simulation where only one player's
+species is introduced. The species need to survive for a given number of turns.
+This mode is supposed to pre-test player's submission. Number of turns should be
+picked to force species to eat.  Qualification can run with an ecosystem, so
+there is something to eat.
+
+Game will use non-zero exit code if the challange failed.]]
+
+t:description
+[[Tournament is a simulation of all players' species living in the same
+environment. Tournament runs until just one player's species survives. If this
+does not happen before turns limit is reached, score is used to select the
+winner.]]
+
+    local args = parser:parse()
+
+    if args.qualification and not args.player then
+        parser:error("qualification initiated without a player")
+    end
+    if args.tournament and not args.player then
+        parser:error("tournament initiated without players. you suck at options")
+    end
+
+    return args
+end
+
+local function create_game(args)
+    local g = Game:new()
+
+    -- TODO(qsorix): set via system arguments
+    g.print_errors = true
+    g.panic_on_errors = true
+    g:set_initial_energy(3000)
+
+    if args.size then
+        g:set_size(args.size[1], args.size[2])
+    else
+        g:set_size(80, 35)
+    end
+
+    if args.randomseed then
+        math.randomseed(args.randomseed)
+    else
+        math.randomseed(os.time())
+    end
+
+    return g
+end
+
+local function main()
+    local args = parse_arguments()
+    local g = create_game(args)
+
+    for _, path in ipairs(args.ecosystem) do
+        load_species(g, path)
+    end
+
+    print("\27[2J"); -- clear screen
+    if args.qualification then
+        local player_name = load_species(g, args.player[1])
+
+        while not g:finished() do
+            g:turn()
+            g:draw()
+            if g.turn_number >= args.turns then
+                break
+            end
+        end
+
+        if g:count_living_creatures_of_species(player_name) > 0 then
+            print(player_name .. " passed qualifications")
+            os.exit(0)
+        else
+            print(player_name .. " failed qualifications")
+            os.exit(1)
+        end
+
+    elseif args.tournament then
+        -- TODO(qsorix): implement tournament rules. stop when just one player
+        -- is left, or after turn limit is reached, and return the winner
+        for _, path in ipairs(args.player) do
+            load_species(g, path)
+        end
+
+        local turn =0
+        g:draw()
+        repeat
+            turn = turn + 1
+            g:turn()
+            --if turn % 4 == 0 then
+                g:draw()
+            --end
+        until g:finished()
+    end
+end
+
+main()
