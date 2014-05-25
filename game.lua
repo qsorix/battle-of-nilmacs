@@ -68,6 +68,8 @@ function Game:new()
         -- gathered in the creatures table, so here I go fully-weak.
         creatures_safe = {__mode='kv'},
 
+        species = {},
+
         activation_queue = {},
         size = {},
         species_scores = {},
@@ -146,7 +148,7 @@ function Game:draw()
         for x=1,self.size.x,1 do
             local mark
             for c in pairs(self.grid[x][y]) do
-                if not c.plant or not mark then
+                if not self:is_plant(c) or not mark then
                     if c.alive then
                         mark = c.color or '@'
                     else
@@ -196,6 +198,14 @@ function Game:draw()
 end
 
 function Game:add_species(species)
+    local dsp_alive, dsp_dead = compute_display(species.display_letter,
+                                                species.display_letter_dead,
+                                                species.display_color)
+    species._display_alive = dsp_alive
+    species._display_dead = dsp_dead
+
+    self.species[species.name] = species
+
     local energy_left = self.initial_energy_pool
     local species_initial_energy = species.initial_energy or 20
     while energy_left > 0 do
@@ -206,10 +216,7 @@ function Game:add_species(species)
             energy = energy_left
         end
         energy_left = energy_left - energy
-        local dsp_alive, dsp_dead = compute_display(species.display_letter,
-                                                    species.display_letter_dead,
-                                                    species.display_color)
-        self:add_creature(species.brain, species.name, dsp_alive, dsp_dead, energy, species.plant)
+        self:add_creature(species, energy)
     end
     for i = 1,20 do
     end
@@ -254,22 +261,20 @@ function Game:living_species()
 end
 
 
-function Game:create_creature(brain, species, color, color_dead, initial_energy, plant)
-    assert(type(brain)=="function", "creatures must be functions")
+function Game:create_creature(species, initial_energy)
     local c = Creature:new()
     c.priority = math.random()
-    c.brain = brain
-    c.species = species or "cat"
+    c.brain = species.brain
+    c.species = species.name
+    c.color = species._display_alive
+    c.color_dead = species._display_dead
     c.x = math.random(1, self.size.x)
     c.y = math.random(1, self.size.y)
     c.energy = initial_energy or 20
     c.flesh = c.energy
     c.alive = true
-    c.color = color or "x"
-    c.color_dead = color_dead or "x"
     c.memory = {}
     c.safe = readonlytable(c)
-    c.plant = plant
 
     local env = {
         Action = {
@@ -283,8 +288,17 @@ function Game:create_creature(brain, species, color, color_dead, initial_energy,
     return c
 end
 
-function Game:add_creature(brain, species, color, color_dead, initial_energy, plant)
-    local c = self:create_creature(brain, species, color, color_dead, initial_energy, plant)
+function Game:add_creature(species, initial_energy)
+    -- TODO(qsorix): This first part helps in tests. Move it to tests
+    species.name = species.name or "species ("..tostring(species)..")"
+    species.brain = species.brain or function() end
+
+    if not self.species[species.name] then
+        self.species[species.name] = species
+    end
+    --
+
+    local c = self:create_creature(species, initial_energy)
 
     self.creatures[c] = true
     self.creatures_safe[c.safe] = c
@@ -318,8 +332,8 @@ function Game:move_on_grid(creature, x, y)
 end
 
 -- TODO(qsorix): Used only in tests. Remove/replace
-function Game:add_creature_at_position(brain, x, y)
-    local c = self:add_creature(brain)
+function Game:add_creature_at_position(brain, x, y, species_name)
+    local c = self:add_creature(brain, species_name)
     self:move_on_grid(c, x, y)
     return c
 end
@@ -399,6 +413,10 @@ function Game:is_alive(creature)
     return creature.alive
 end
 
+function Game:is_plant(creature)
+    return self.species[creature.species].plant
+end
+
 function Game:can_creature_see(observer, creature, power)
     local dx = observer.x-creature.x
     local dy = observer.y-creature.y
@@ -448,7 +466,7 @@ function Game:creature_run_decision(creature, decision)
 end
 
 function Game:creature_move(creature, move)
-    if not creature.plant then
+    if not self:is_plant(creature) then
         local x, y = self:adjust_to_grid(creature.x + move.dx, creature.y + move.dy)
         self:move_on_grid(creature, x, y)
     else
@@ -500,7 +518,7 @@ function Game:creature_eat(attacker, prey)
 end
 
 function Game:creature_photosynthesis(creature)
-    if creature.plant then
+    if self:is_plant(creature) then
         self:adjust_creature_energy(creature, self.photosynthesis_energy_gain)
     else
         creature.alive = false
@@ -525,7 +543,7 @@ function Game:creature_breed(breeder, energy_for_offspring)
 
     self:adjust_creature_energy(breeder, -cost)
 
-    local new_creature =  self:add_creature(breeder.brain, breeder.species, breeder.color, breeder.color_dead, energy_for_offspring, breeder.plant)
+    local new_creature = self:add_creature(self.species[breeder.species], energy_for_offspring)
 
     local x=breeder.x
     local y=breeder.y

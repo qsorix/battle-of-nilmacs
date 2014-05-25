@@ -17,8 +17,8 @@ end
 function test_score_increases_for_gained_energy()
     local g = Game:new()
     g:set_size(2,2)
-    local f = g:add_creature(function() end, "food")
-    local e = g:add_creature(function() end, "eater")
+    local f = g:add_creature({brain=function() end, name="food"})
+    local e = g:add_creature({brain=function() end, name="eater"})
     g:creature_attack(e, f.safe)
     g:creature_eat(e, f.safe)
 
@@ -29,8 +29,9 @@ end
 function test_no_score_is_awarded_for_eating_the_same_species()
     local g = Game:new()
     g:set_size(2,2)
-    local f = g:add_creature(function() end, "species")
-    local e = g:add_creature(function() end, "species")
+    local species = {brain=function() end, name="species"}
+    local f = g:add_creature(species)
+    local e = g:add_creature(species)
     g:creature_attack(e, f.safe)
     g:creature_eat(e, f.safe)
 
