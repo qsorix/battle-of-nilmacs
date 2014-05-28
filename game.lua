@@ -87,7 +87,7 @@ function Game:new()
         },
         turn_energy_cost = -1,
         turn_decompose_speed = -1,
-        photosynthesis_energy_gain = 3.7
+        photosynthesis_energy_gain = 6.0
     }
 
     setmetatable(o, self)
@@ -423,6 +423,25 @@ function Game:can_creature_see(observer, creature, power)
     return dx^2 + dy^2 <= power^2
 end
 
+function Game:count_plants_close_to(creature)
+    local result = 0
+
+    local xmin = math.max(creature.x-1, 1)
+    local xmax = math.min(creature.x+1, self.size.x)
+    local ymin = math.max(creature.y-1, 1)
+    local ymax = math.min(creature.y+1, self.size.y)
+    for x = xmin, xmax do
+        for y = ymin, ymax do
+            for p in pairs(self.grid[x][y]) do
+                if p ~= creature and self:is_plant(p) then
+                    result = result + 1
+                end
+            end
+        end
+    end
+    return result
+end
+
 function Game:creature_run_brain(creature)
     setfenv(creature.brain, creature.env)
 
@@ -519,7 +538,11 @@ end
 
 function Game:creature_photosynthesis(creature)
     if self:is_plant(creature) then
-        self:adjust_creature_energy(creature, self.photosynthesis_energy_gain)
+        local plants = self:count_plants_close_to(creature)
+        if plants < 8 then
+            plants = plants*0.1
+        end
+        self:adjust_creature_energy(creature, self.photosynthesis_energy_gain/(1+plants))
     else
         creature.alive = false
         --[[

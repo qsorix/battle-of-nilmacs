@@ -324,3 +324,32 @@ function test_plants_cannot_move()
     g:turn()
     assert_false(g:is_alive(p))
 end
+
+function test_photosynthesis_gives_less_energy_when_many_plants_are_nearby()
+    local species = {
+        plant=true,
+        brain=function()
+            return Decision.Photosynthesis()
+        end
+    }
+
+    local g = Game:new()
+    g:set_size(1,1)
+    local p1 = g:add_creature(species)
+    local e1 = p1.energy
+    g:turn()
+    local e2 = p1.energy
+
+    local energy_gain_with_one_creature = e2-e1
+
+    local g = Game:new()
+    g:set_size(1,1)
+    local p1 = g:add_creature(species)
+    local p2 = g:add_creature(species)
+    local e1 = p1.energy
+    g:turn()
+    local e2 = p1.energy
+    local energy_gain_with_two_creatures = e2-e1
+
+    assert_true(energy_gain_with_two_creatures < energy_gain_with_one_creature)
+end

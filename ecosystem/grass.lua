@@ -7,18 +7,8 @@ species.initial_energy = 5
 species.plant = true
 
 function species.brain()
-
     if Self.energy > 12 then
-        local near = Action.Look(1)
-        local count = 0
-        for _, c in ipairs(near) do
-            if c.species == "grass" then
-                count = count + 1
-            end
-        end
-        if count < 3 then
-            return Decision.Breed(5)
-        end
+        return Decision.Breed(5)
     end
     return Decision.Photosynthesis()
 end
