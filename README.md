@@ -48,7 +48,4 @@ reached. In the latter case, the species with highest score wins.
 
 ## FAQ
 
-Q: ...
-
-A: Read the code! It's part of the task. You will not win without understanding
-the simulation's engine.
+See project's wiki on github.
