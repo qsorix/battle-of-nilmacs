@@ -57,6 +57,10 @@ local function parse_arguments()
         :description "file with species to be qualified for the tournament"
 
     local t = parser:command "tournament"
+    t:option "--turns"
+        :convert(tonumber)
+        :default "100000"
+        :description "how many turns to run"
     t:option "--ecosystem"
         :args "+"
         :description "files with ecosystem species"
@@ -143,21 +147,34 @@ local function main()
         end
 
     elseif args.tournament then
-        -- TODO(qsorix): implement tournament rules. stop when just one player
-        -- is left, or after turn limit is reached, and return the winner
+        local player_names = {}
+
         for _, path in ipairs(args.player) do
-            load_species(g, path)
+            table.insert(player_names, load_species(g, path))
         end
 
-        local turn =0
-        g:draw()
-        repeat
-            turn = turn + 1
+        while not g:finished() and g.turn_number < args.turns do
             g:turn()
-            --if turn % 4 == 0 then
-                g:draw()
-            --end
-        until g:finished()
+            g:draw()
+        end
+
+        -- TODO(qsorix): if only one player left, that's the winner. otherwise,
+        -- consider the best score of all players that are still alive.
+        -- hm. just modify the loop to work on living players
+        --
+        -- TODO(qsorix): what when no player survived?
+
+        local best_score = nil
+        local best_player = nil
+        for _, name in ipairs(player_names) do
+            if (g.species_scores[name] or 0) > (best_score or 0) then
+                best_score = g.species_scores[name]
+                best_player = name
+            end
+        end
+
+        print(best_player .. " has won")
+        os.exit(0)
     end
 end
 
