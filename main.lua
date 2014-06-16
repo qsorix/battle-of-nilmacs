@@ -42,6 +42,8 @@ local function parse_arguments()
         :argname {"<x>", "<y>"}
         :convert(tonumber)
         :description "size of the game world"
+    parser:flag "--dont-draw"
+        :target "dont_draw"
 
     local q = parser:command "qualification"
     q:option "--turns"
@@ -126,13 +128,14 @@ local function main()
         load_species(g, path)
     end
 
-    print("\27[2J"); -- clear screen
     if args.qualification then
         local player_name = load_species(g, args.player[1])
 
         while not g:finished() do
             g:turn()
-            g:draw()
+            if not args.dont_draw then
+                g:draw()
+            end
             if g.turn_number >= args.turns then
                 break
             end
@@ -155,7 +158,9 @@ local function main()
 
         while not g:finished() and g.turn_number < args.turns do
             g:turn()
-            g:draw()
+            if not args.dont_draw then
+                g:draw()
+            end
         end
 
         -- TODO(qsorix): if only one player left, that's the winner. otherwise,
