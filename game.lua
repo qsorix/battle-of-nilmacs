@@ -128,11 +128,14 @@ function Game:set_size(x, y)
     self.size.x = x
     self.size.y = y
     self.grid = {}
+    self.plants_grid = {}
     self.count_by_species = {}
     for i = 1,x do
         self.grid[i] = {}
+        self.plants_grid[i] = {}
         for j = 1,y do
             self.grid[i][j] = {}
+            self.plants_grid[i][j] = 0
         end
     end
 end
@@ -320,11 +323,26 @@ function Game:adjust_to_grid(x, y)
     return x, y
 end
 
+function Game:adjust_plants_grid(x, y, delta)
+    for i = math.max(1, x-1), math.min(self.size.x, x+1) do
+        for j = math.max(1, y-1), math.min(self.size.y, y+1) do
+            self.plants_grid[i][j] = self.plants_grid[i][j] + delta
+        end
+    end
+    self.plants_grid[x][y] = self.plants_grid[x][y] + delta
+end
+
 function Game:put_on_grid(creature)
+    if self:is_plant(creature) then
+        self:adjust_plants_grid(creature.x, creature.y, 1)
+    end
     self.grid[creature.x][creature.y][creature] = true
 end
 
 function Game:remove_from_grid(creature)
+    if self:is_plant(creature) then
+        self:adjust_plants_grid(creature.x, creature.y, -1)
+    end
     self.grid[creature.x][creature.y][creature] = nil
 end
 
@@ -428,22 +446,7 @@ function Game:can_creature_see(observer, creature, power)
 end
 
 function Game:count_plants_close_to(creature)
-    local result = 0
-
-    local xmin = math.max(creature.x-1, 1)
-    local xmax = math.min(creature.x+1, self.size.x)
-    local ymin = math.max(creature.y-1, 1)
-    local ymax = math.min(creature.y+1, self.size.y)
-    for x = xmin, xmax do
-        for y = ymin, ymax do
-            for p in pairs(self.grid[x][y]) do
-                if p ~= creature and self:is_plant(p) then
-                    result = result + 1
-                end
-            end
-        end
-    end
-    return result
+    return self.plants_grid[creature.x][creature.y]
 end
 
 function Game:creature_run_brain(creature)
