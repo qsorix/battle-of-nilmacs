@@ -20,12 +20,16 @@ local function readonlytable(table)
    });
 end
 
+local function sort_by_priority(array)
+    table.sort(array, function(a, b) return a.priority < b.priority end)
+end
+
 local function sort_set_of_creatures(set)
     local array = {}
     for c in pairs(set) do
         table.insert(array, c)
     end
-    table.sort(array, function(a, b) return a.priority < b.priority end)
+    sort_by_priority(array)
     return array
 end
 
@@ -514,6 +518,7 @@ function Game:creature_look(creature, power)
             end
         end
     end
+    sort_by_priority(result)
     return result
 end
 
