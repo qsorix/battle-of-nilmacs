@@ -1,2 +1,2 @@
 #!/bin/sh
-./main.lua tournament --ecosystem ecosystem/* --player players/*
+./main.lua --debug tournament --ecosystem ecosystem/* --player players/*

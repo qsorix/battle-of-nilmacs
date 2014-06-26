@@ -100,15 +100,23 @@ function Game:new()
 end
 
 function Game:create_sandbox()
-    return {
-        pairs = pairs,
-        ipairs = ipairs,
-        table = {insert = table.insert,
-                 remove = table.remove},
-        math  = {sqrt = math.sqrt,
-                 random = math.random,
-                 abs = math.abs},
+    local visible_global
 
+    if self.sandbox_includes_global_scope then
+        visible_global = _G
+    else
+        visible_global = {
+            pairs = pairs,
+            ipairs = ipairs,
+            table = {insert = table.insert,
+                     remove = table.remove},
+            math  = {sqrt = math.sqrt,
+                     random = math.random,
+                     abs = math.abs},
+        }
+    end
+
+    local game_sandbox = {
         Algo  = {closest = algorithms.closest,
                  closest_alive = algorithms.closest_alive,
                  closer_to = algorithms.closer_to,
@@ -122,6 +130,9 @@ function Game:create_sandbox()
         EAST = Decision.Direction.EAST,
         WEST = Decision.Direction.WEST,
     }
+
+    setmetatable(game_sandbox, {__index = visible_global})
+    return game_sandbox
 end
 
 function Game:set_size(x, y)
@@ -464,11 +475,11 @@ function Game:creature_run_brain(creature)
         -- kill creatures with code causing errors
         creature.alive = false
 
-        if self.panic_on_errors then
-            error(result)
-        end
         if self.print_errors then
             io.stderr:write(result)
+        end
+        if self.panic_on_errors then
+            error(result)
         end
     end
 end

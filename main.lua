@@ -44,6 +44,7 @@ local function parse_arguments()
         :description "size of the game world"
     parser:flag "--dont-draw"
         :target "dont_draw"
+    parser:flag "--debug"
 
     local q = parser:command "qualification"
     q:option "--turns"
@@ -100,9 +101,11 @@ end
 local function create_game(args)
     local g = Game:new()
 
-    -- TODO(qsorix): set via system arguments
-    g.print_errors = true
-    g.panic_on_errors = true
+    if args.debug then
+        g.print_errors = true
+        g.panic_on_errors = true
+        g.sandbox_includes_global_scope = true
+    end
     g:set_initial_energy(3000)
 
     if args.size then
