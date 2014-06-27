@@ -236,8 +236,6 @@ function Game:add_species(species)
         energy_left = energy_left - energy
         self:add_creature(species, energy)
     end
-    for i = 1,20 do
-    end
 end
 
 function Game:count_creatures_of_species(species_name)
