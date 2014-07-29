@@ -290,6 +290,8 @@ function Game:create_creature(species, initial_energy)
     c.flesh = c.energy
     c.alive = true
     c.memory = {}
+    c.sees = {} -- optimization: avoids creating new tables to return results of
+                -- creature_look
     c.safe = readonlytable(c)
 
     local env = {
@@ -513,7 +515,10 @@ function Game:creature_move(creature, move)
 end
 
 function Game:creature_look(creature, power)
-    local result = {}
+    local result = creature.sees
+    for i = 1, #result do
+        result[i] = nil
+    end
 
     local xmin = math.max(creature.x-power, 1)
     local xmax = math.min(creature.x+power, self.size.x)
@@ -524,7 +529,7 @@ function Game:creature_look(creature, power)
             if ((creature.x-x)*(creature.x-x) + (creature.y-y)*(creature.y-y) <= power*power) then
                 for p in pairs(self.grid[x][y]) do
                     if p ~= creature then
-                        table.insert(result, p.safe)
+                        result[#result+1] = p.safe
                     end
                 end
             end
