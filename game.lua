@@ -165,7 +165,9 @@ function Game:draw()
     for y=self.size.y,1,-1 do
         for x=1,self.size.x,1 do
             local mark
-            for c in pairs(self.grid[x][y]) do
+            local cell = self.grid[x][y]
+            for i = 1, #cell do
+                local c = cell[i]
                 if not self:is_plant(c) or not mark then
                     if c.alive then
                         mark = c.color or '@'
@@ -183,7 +185,6 @@ function Game:draw()
     io.write(table.concat(result, ""))
 
     print("\nTurn: " .. self.turn_number .. " Active: " .. self.turn_active_creatures .. " TQ: " .. size(self.activation_queue))
-
 
     ---[[
     local species_count = {}
@@ -347,14 +348,20 @@ function Game:put_on_grid(creature)
     if self:is_plant(creature) then
         self:adjust_plants_grid(creature.x, creature.y, 1)
     end
-    self.grid[creature.x][creature.y][creature] = true
+    table.insert(self.grid[creature.x][creature.y], creature)
 end
 
 function Game:remove_from_grid(creature)
     if self:is_plant(creature) then
         self:adjust_plants_grid(creature.x, creature.y, -1)
     end
-    self.grid[creature.x][creature.y][creature] = nil
+    local cell = self.grid[creature.x][creature.y]
+    for i = 1,#cell do
+        if cell[i] == creature then
+            table.remove(cell, i)
+            return
+        end
+    end
 end
 
 function Game:move_on_grid(creature, x, y)
@@ -527,7 +534,7 @@ function Game:creature_look(creature, power)
     for x = xmin, xmax do
         for y = ymin, ymax do
             if ((creature.x-x)*(creature.x-x) + (creature.y-y)*(creature.y-y) <= power*power) then
-                for p in pairs(self.grid[x][y]) do
+                for _, p in ipairs(self.grid[x][y]) do
                     if p ~= creature then
                         result[#result+1] = p.safe
                     end
@@ -535,7 +542,6 @@ function Game:creature_look(creature, power)
             end
         end
     end
-    sort_by_priority(result)
     return result
 end
 
