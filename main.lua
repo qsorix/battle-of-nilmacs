@@ -166,18 +166,16 @@ local function main()
             end
         end
 
-        -- TODO(qsorix): if only one player left, that's the winner. otherwise,
-        -- consider the best score of all players that are still alive.
-        -- hm. just modify the loop to work on living players
-        --
         -- TODO(qsorix): what when no player survived?
 
         local best_score = nil
         local best_player = nil
         for _, name in ipairs(player_names) do
-            if (g.species_scores[name] or 0) > (best_score or 0) then
-                best_score = g.species_scores[name]
-                best_player = name
+            if g:count_living_creatures_of_species(name) > 0 then
+                if (g.species_scores[name] or 0) > (best_score or 0) then
+                    best_score = g.species_scores[name]
+                    best_player = name
+                end
             end
         end
 
