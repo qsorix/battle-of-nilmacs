@@ -134,17 +134,21 @@ local function main()
     if args.qualification then
         local player_name = load_species(g, args.player[1])
 
+        local turns_limit_reached = false
+
         while not g:finished() do
             g:turn()
             if not args.dont_draw then
                 g:draw()
             end
             if g.turn_number >= args.turns then
+                turns_limit_reached = true
                 break
             end
         end
 
-        if g:count_living_creatures_of_species(player_name) > 0 then
+        if turns_limit_reached and
+           g:count_living_creatures_of_species(player_name) > 0 then
             print(player_name .. " passed qualifications")
             os.exit(0)
         else
