@@ -112,7 +112,9 @@ function Game:create_sandbox()
                      remove = table.remove},
             math  = {sqrt = math.sqrt,
                      random = math.random,
-                     abs = math.abs},
+                     abs = math.abs,
+                     max = math.max,
+                     min = math.min},
         }
     end
 
