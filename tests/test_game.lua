@@ -244,6 +244,24 @@ function test_creatures_can_check_game_world_size()
     assert_equal(18, y)
 end
 
+function test_creatures_can_check_if_game_runs_in_sanbox()
+    function test(value)
+        local g = Game:new()
+        g.sandbox_includes_global_scope = value
+
+        local disabled
+        local c = g:add_creature({brain=function()
+            disabled = World.SandboxDisabled
+        end})
+        g:turn()
+
+        assert_equal(disabled, value)
+    end
+
+    test(true)
+    test(false)
+end
+
 function test_creatures_run_in_a_sandbox_and_die_if_they_break_it()
     local g = Game:new()
 

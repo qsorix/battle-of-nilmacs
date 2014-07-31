@@ -125,7 +125,9 @@ function Game:create_sandbox()
                  away_from = algorithms.away_from},
 
         Decision = Decision,
-        World = { X = self.size.x, Y = self.size.y },
+        World = {X = self.size.x,
+                 Y = self.size.y,
+                 SandboxDisabled = self.sandbox_includes_global_scope},
 
         NORTH = Decision.Direction.NORTH,
         SOUTH = Decision.Direction.SOUTH,
