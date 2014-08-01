@@ -2,3 +2,5 @@
 /annotated-source.txt
 /trace-out.txt
 /qualified/
+/players/*.lua
+/lulip.lua
