@@ -371,3 +371,33 @@ function test_photosynthesis_gives_less_energy_when_many_plants_are_nearby()
 
     assert_true(energy_gain_with_two_creatures < energy_gain_with_one_creature)
 end
+
+function test_creatures_with_endless_loops_are_interrupted_and_killed()
+    local g = Game:new()
+    local c = g:add_creature({brain=function()
+        while true do
+        end
+    end})
+    g:turn()
+    assert_false(g:is_alive(c))
+end
+
+function test_running_brain_requires_energy()
+    local g = Game:new()
+
+    local fast = g:add_creature({brain=function()
+        for i=1,1000 do
+        end
+    end})
+
+    local slow = g:add_creature({brain=function()
+        for i=1,5000 do
+        end
+    end})
+
+    g:turn()
+
+    assert_true(g:is_alive(fast))
+    assert_true(g:is_alive(slow))
+    assert_true(fast.energy > slow.energy)
+end

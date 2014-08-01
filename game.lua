@@ -91,7 +91,11 @@ function Game:new()
         },
         turn_energy_cost = -1,
         turn_decompose_speed = -1,
-        photosynthesis_energy_gain = 6.0
+        photosynthesis_energy_gain = 6.0,
+        -- 25000 instructions per turn was maximum observed in submissions sent
+        -- for the 1st round of the tournament
+        executing_instruction_cost = (0.1 / 25000),
+        executing_instruction_cost_incured_once_per_turns = 1000
     }
 
     setmetatable(o, self)
@@ -471,11 +475,60 @@ function Game:count_plants_close_to(creature)
     return self.plants_grid[creature.x][creature.y]
 end
 
+local function run_with_hook(func, hook, instructions)
+    local status, result
+
+    -- The inner pcall catches any error caused by `func`, plus errors raised
+    -- from `hook` to interrupt execution of `func`.
+    --
+    -- When leaving inner pcall, the hook is still active, and can trigger
+    -- before it's disabled. That's why there's the outer pcall. The second
+    -- sethook is there to handle cases when the outer pcall was used.
+    --
+    -- This only works if the hook is not scheduled to run too often. And I feel
+    -- like I've missed something simpler.
+    local st2, err2 = pcall(function()
+        debug.sethook(hook, "", instructions)
+
+        status, result = pcall(func)
+
+        debug.sethook()
+    end)
+    debug.sethook()
+
+    -- if the outer pcall got called, it means the hook triggered and the error
+    -- should be returned
+    if not st2 then
+        return st2, err2
+    end
+
+    return status, result
+end
+
 function Game:creature_run_brain(creature)
     setfenv(creature.brain, creature.env)
 
-    -- pcal returns either (true, decision) or (false, errmsg)
-    local status, result = pcall(creature.brain)
+    local energy_exceeded = {} -- acts as a unique exception object
+
+    local status, result
+
+    local hook_cost =
+        self.executing_instruction_cost_incured_once_per_turns *
+        self.executing_instruction_cost
+
+    local energy = creature.energy
+
+    local function hook(event, line)
+        energy = energy - hook_cost
+        if energy <= 0 then
+            energy = 0
+            error(energy_exceeded)
+        end
+    end
+
+    status, result = run_with_hook(creature.brain, hook, self.executing_instruction_cost_incured_once_per_turns)
+
+    creature.energy = energy
 
     if status then
         if not result or type(result) ~= "table" then
@@ -486,11 +539,13 @@ function Game:creature_run_brain(creature)
         -- kill creatures with code causing errors
         creature.alive = false
 
-        if self.print_errors then
-            io.stderr:write(result)
-        end
-        if self.panic_on_errors then
-            error(result)
+        if (result ~= energy_exceeded) then
+            if self.print_errors then
+                io.stderr:write(result)
+            end
+            if self.panic_on_errors then
+                error(result)
+            end
         end
     end
 end
