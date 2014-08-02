@@ -131,8 +131,10 @@ local function main()
     local args = parse_arguments()
     local g = create_game(args)
 
-    for _, path in ipairs(args.ecosystem) do
-        load_species(g, path)
+    if args.ecosystem then
+        for _, path in ipairs(args.ecosystem) do
+            load_species(g, path)
+        end
     end
 
     if args.qualification then
