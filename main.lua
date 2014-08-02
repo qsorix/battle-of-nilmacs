@@ -45,6 +45,10 @@ local function parse_arguments()
     parser:flag "--dont-draw"
         :target "dont_draw"
     parser:flag "--debug"
+    parser:option "--initial-energy"
+         :args "1"
+         :target "initial_energy"
+         :convert(tonumber)
 
     local q = parser:command "qualification"
     q:option "--turns"
@@ -106,7 +110,7 @@ local function create_game(args)
         g.panic_on_errors = true
         g.sandbox_includes_global_scope = true
     end
-    g:set_initial_energy(3000)
+    g:set_initial_energy(args.initial_energy or 3000)
 
     if args.size then
         g:set_size(args.size[1], args.size[2])
