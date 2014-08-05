@@ -380,3 +380,16 @@ function test_running_brain_requires_energy()
     assert_true(g:is_alive(slow))
     assert_true(fast.energy > slow.energy)
 end
+
+function test_moving_requires_energy_based_on_speed()
+    local g = Game:new()
+    local slow = g:add_creature({brain=function() end})
+    local fast = g:add_creature({brain=function() end})
+
+    assert_true(slow.energy == fast.energy)
+
+    g:creature_move(slow, {dx=1, dy=0})
+    g:creature_move(fast, {dx=2, dy=0})
+
+    assert_true(slow.energy > fast.energy)
+end

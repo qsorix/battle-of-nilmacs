@@ -87,6 +87,7 @@ function Game:new()
 
         initial_energy_pool = 50,
         energy_cost_breeding = 5,
+        energy_cost_factor_move = 2,
         breed_distance = 2,
         attack_radius = 2,
         attack_success_ratio_exponent = 1.60,
@@ -568,8 +569,14 @@ end
 
 function Game:creature_move(creature, move)
     if not self:is_plant(creature) then
-        local x, y = self:adjust_to_grid(creature.x + move.dx, creature.y + move.dy)
-        self:move_on_grid(creature, x, y)
+        local dist = math.max(math.abs(move.dx), math.abs(move.dy))
+        local energy_cost = dist*dist*self.energy_cost_factor_move
+
+        if creature.energy > energy_cost then
+            local x, y = self:adjust_to_grid(creature.x + move.dx, creature.y + move.dy)
+            self:move_on_grid(creature, x, y)
+        end
+        self:adjust_creature_energy(creature, -energy_cost)
     else
         --[[
         io.stderr:write("Creature " .. creature.name  .. " tries to lose roots\n")
