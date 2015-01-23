@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 SEED="1"
 SIZE="80 35"
