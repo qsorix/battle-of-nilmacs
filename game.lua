@@ -76,7 +76,12 @@ function Game:new()
 
         activation_queue = {},
         size = {},
-        species_scores = {},
+
+        stats = {
+           count = {}, -- all creatures per species
+           living = {}, -- living creatures per species
+           scores = {}, -- score per species
+        },
         turn_number = 0,
         turn_active_creatures = 0,
 
@@ -150,7 +155,6 @@ function Game:set_size(x, y)
     self.size.y = y
     self.grid = {}
     self.plants_grid = {}
-    self.count_by_species = {}
     for i = 1,x do
         self.grid[i] = {}
         self.plants_grid[i] = {}
@@ -197,14 +201,12 @@ function Game:draw()
     print("\nTurn: " .. self.turn_number .. " Active: " .. self.turn_active_creatures .. " TQ: " .. size(self.activation_queue))
 
     ---[[
-    local species_count = {}
     local species_energy = {}
     local species_energy_min = {}
     local species_energy_max = {}
 
     for c in pairs(self.creatures) do
         if c.alive then
-            species_count[c.species] = (species_count[c.species] or 0) + 1
             species_energy[c.species] = (species_energy[c.species] or 0) + c.energy
             species_energy_min[c.species] = math.min(species_energy_min[c.species] or 1000000000, c.energy)
             species_energy_max[c.species] = math.max(species_energy_max[c.species] or 0, c.energy)
@@ -213,14 +215,14 @@ function Game:draw()
 
     print("")
     print("Stats:             Score  Count    Min E   Avg E   Max E")
-    for c in pairs(species_count) do
+    for c in pairs(species_energy) do
         io.write(string.format(
             "%-10s  %12i  %5i  %7.1f %7.1f %7.1f\n",
             c,
-            math.floor(self.species_scores[c] or 0),
-            species_count[c],
+            math.floor(self.stats.scores[c] or 0),
+            self.stats.living[c],
             species_energy_min[c],
-            math.floor(species_energy[c]/species_count[c]),
+            math.floor(species_energy[c]/self.stats.living[c]),
             species_energy_max[c]))
     end
     --]]
@@ -250,43 +252,12 @@ function Game:add_species(species)
 end
 
 function Game:count_creatures_of_species(species_name)
-    return self.count_by_species[species_name] or 0
+    return self.stats.count[species_name] or 0
 end
 
 function Game:count_living_creatures_of_species(species_name)
-    local count = 0
-    for c in pairs(self.creatures) do
-        if c.alive and c.species == species_name then
-            count = count + 1
-        end
-    end
-    return count
+    return self.stats.living[species_name] or 0
 end
-
-function Game:count_creatures()
-    local count = 0
-    for c in pairs(self.creatures) do
-        if c.alive then
-            count = count + 1
-        end
-    end
-    return count
-end
-
-function Game:living_species()
-    local species = {}
-    local living = 0
-    for c in pairs(self.creatures) do
-        if c.alive then
-            if not species[c.species] then
-                living = living + 1
-                species[c.species] = true
-            end
-        end
-    end
-    return living
-end
-
 
 function Game:create_creature(species, initial_energy)
     local c = Creature:new()
@@ -331,7 +302,8 @@ function Game:add_creature(species, initial_energy)
 
     self.creatures[c] = true
     self.creatures_safe[c.safe] = c
-    self.count_by_species[c.species] = (self.count_by_species[c.species] or 0) + 1
+    self.stats.count[c.species] = (self.stats.count[c.species] or 0) + 1
+    self.stats.living[c.species] = (self.stats.living[c.species] or 0) + 1
     TQ.enqueue(self.activation_queue, c, (self.turn_number+1))
 
     self:put_on_grid(c)
@@ -391,15 +363,25 @@ end
 function Game:remove_creature(c)
     self:remove_from_grid(c)
     self.creatures[c] = nil
-    self.count_by_species[c.species] = self.count_by_species[c.species] - 1
+    self.stats.count[c.species] = self.stats.count[c.species] - 1
     c.purge = true
 end
 
+function Game:kill_creature(c)
+   if c.alive then
+      c.alive = false
+      self.stats.living[c.species] = self.stats.living[c.species] - 1
+   end
+end
+
 function Game:finished()
-    if self:living_species() > 1 then
-        return false
+    local living_species = 0
+    for s in pairs(self.stats.living) do
+        if self.stats.living[s] ~= 0 then
+            living_species = living_species + 1
+        end
     end
-    return true
+    return living_species <= 1
 end
 
 function Game:turn()
@@ -440,11 +422,11 @@ function Game:turn()
 end
 
 function Game:species_add_points(species, points)
-    self.species_scores[species] = (self.species_scores[species] or 0) + points
+    self.stats.scores[species] = (self.stats.scores[species] or 0) + points
 end
 
 function Game:species_score(species)
-    return self.species_scores[species] or 0
+    return self.stats.scores[species] or 0
 end
 
 function Game:adjust_creature_energy(creature, delta, no_score)
@@ -455,7 +437,7 @@ function Game:adjust_creature_energy(creature, delta, no_score)
     end
 
     if (creature.energy <= 0) then
-        creature.alive = false
+        self:kill_creature(creature)
     end
 end
 
@@ -539,7 +521,7 @@ function Game:creature_run_brain(creature)
         return result
     else
         -- kill creatures with code causing errors
-        creature.alive = false
+        self:kill_creature(creature)
 
         if (result ~= energy_exceeded) then
             if self.print_errors then
@@ -578,7 +560,7 @@ function Game:creature_move(creature, move)
         --[[
         io.stderr:write("Creature " .. creature.species  .. " tries to lose roots\n")
         --]]
-        creature.alive = false
+        self:kill_creature(creature)
     end
 end
 
@@ -615,7 +597,7 @@ function Game:creature_attack(attacker, prey)
             return
         end
         assert(self.creatures_safe[prey])
-        self.creatures_safe[prey].alive = false
+        self:kill_creature(self.creatures_safe[prey])
     end
 end
 
@@ -637,7 +619,7 @@ function Game:creature_photosynthesis(creature)
         end
         self:adjust_creature_energy(creature, self.photosynthesis_energy_gain/(1+plants))
     else
-        creature.alive = false
+        self:kill_creature(creature)
         --[[
         io.stderr:write("Creature " .. creature.species  .. " tries to be green\n")
         --]]

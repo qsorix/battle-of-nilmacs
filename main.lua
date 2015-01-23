@@ -182,8 +182,8 @@ local function main()
         local best_player = nil
         for _, name in ipairs(player_names) do
             if g:count_living_creatures_of_species(name) > 0 then
-                if (g.species_scores[name] or 0) > (best_score or 0) then
-                    best_score = g.species_scores[name]
+                if (g.stats.scores[name] or 0) > (best_score or 0) then
+                    best_score = g.stats.scores[name]
                     best_player = name
                 end
             end

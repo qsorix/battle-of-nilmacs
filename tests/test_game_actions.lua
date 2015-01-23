@@ -201,11 +201,12 @@ end
 
 function test_creature_can_breed_spawning_new_creatures()
     local g = Game:new()
-    local c = g:add_creature({brain=function() return Decision.Breed(1) end})
+    local c = g:add_creature({name="cat",
+                              brain=function() return Decision.Breed(1) end})
 
-    assert_equal(1, g:count_creatures())
+    assert_equal(1, g:count_living_creatures_of_species("cat"))
     g:turn()
-    assert_equal(2, g:count_creatures())
+    assert_equal(2, g:count_living_creatures_of_species("cat"))
 end
 
 function test_creature_can_use_photosynthesis_to_restore_energy()
