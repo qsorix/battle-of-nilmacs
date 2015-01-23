@@ -124,7 +124,8 @@ function Game:create_sandbox()
     end
 
     local game_sandbox = {
-        Algo  = {closest = algorithms.closest,
+        Algo  = {distance = algorithms.distance,
+                 closest = algorithms.closest,
                  closest_alive = algorithms.closest_alive,
                  closer_to = algorithms.closer_to,
                  away_from = algorithms.away_from},
