@@ -84,6 +84,7 @@ function Game:new()
         energy_cost_breeding = 5,
         breed_distance = 2,
         attack_radius = 2,
+        attack_success_ratio_exponent = 1.60,
         action_turn_cost = {
             move = 2,
             photosynthesis = 20,
@@ -608,6 +609,10 @@ function Game:creature_attack(attacker, prey)
     assert(attacker)
     assert(prey)
     if self:can_creature_see(attacker, prey, self.attack_radius) then
+        local ratio = attacker.flesh / prey.flesh
+        if ratio < 1 and math.pow(ratio, self.attack_success_ratio_exponent) < math.random() then
+            return
+        end
         assert(self.creatures_safe[prey])
         self.creatures_safe[prey].alive = false
     end

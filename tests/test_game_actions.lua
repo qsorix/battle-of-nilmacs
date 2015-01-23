@@ -124,6 +124,43 @@ function test_creature_can_kill_another_creature()
     assert_true(g:is_alive(c2))
 end
 
+function test_probability_of_a_successful_kill_depends_on_creatures_size()
+    local g = Game:new()
+    g.attack_success_ratio_exponent = 2
+
+    local kills = 0
+    local tries = 0
+
+    for i = 1, 20 do
+        local c1 = g:add_creature_at_position({}, 1, 2)
+        local c2 = g:add_creature_at_position(
+            {brain = function()
+                 return Decision.Attack(c1.safe)
+             end}, 1, 1)
+
+        -- c2 is to small to kill c1 every time (probability = (1/2)^2)
+        c1.flesh = 2
+        c2.flesh = 1
+
+        g:turn()
+
+        tries = tries + 1
+        if not g:is_alive(c1) then
+            kills = kills + 1
+        end
+
+        -- resurect for another try
+        c1.energy = 100
+        c2.energy = 100
+        c1.alive = true
+    end
+
+    -- expected probabily is around 0.25
+    local p = kills / tries
+    assert_true (0.20 <= p and p <= 0.30)
+
+end
+
 function test_creature_can_attack_only_creatures_it_sees()
     local g = Game:new()
 
