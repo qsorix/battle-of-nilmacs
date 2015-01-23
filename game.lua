@@ -380,8 +380,8 @@ function Game:move_on_grid(creature, x, y)
 end
 
 -- TODO(qsorix): Used only in tests. Remove/replace
-function Game:add_creature_at_position(brain, x, y, species_name)
-    local c = self:add_creature(brain, species_name)
+function Game:add_creature_at_position(species, x, y, species_name)
+    local c = self:add_creature(species, species_name)
     self:move_on_grid(c, x, y)
     return c
 end
