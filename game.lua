@@ -210,26 +210,35 @@ function Game:draw()
     local species_energy = {}
     local species_energy_min = {}
     local species_energy_max = {}
+    local species_flesh = {}
+    local species_flesh_min = {}
+    local species_flesh_max = {}
 
     for c in pairs(self.creatures) do
         if c.alive then
             species_energy[c.species] = (species_energy[c.species] or 0) + c.energy
             species_energy_min[c.species] = math.min(species_energy_min[c.species] or 1000000000, c.energy)
             species_energy_max[c.species] = math.max(species_energy_max[c.species] or 0, c.energy)
+            species_flesh[c.species] = (species_flesh[c.species] or 0) + c.flesh
+            species_flesh_min[c.species] = math.min(species_flesh_min[c.species] or 1000000000, c.flesh)
+            species_flesh_max[c.species] = math.max(species_flesh_max[c.species] or 0, c.flesh)
         end
     end
 
     print("")
-    print("Stats:             Score  Count    Min E   Avg E   Max E")
+    print("Stats:             Score  Count    Min E   Avg E   Max E    Min F   Avg F   Max F")
     for c in pairs(species_energy) do
         io.write(string.format(
-            "%-10s  %12i  %5i  %7.1f %7.1f %7.1f\n",
+            "%-10s  %12i  %5i  %7.1f %7.1f %7.1f  %7.1f %7.1f %7.1f\n",
             c,
             math.floor(self.stats.scores[c] or 0),
             self.stats.living[c],
             species_energy_min[c],
             math.floor(species_energy[c]/self.stats.living[c]),
-            species_energy_max[c]))
+            species_energy_max[c],
+            species_flesh_min[c],
+            math.floor(species_flesh[c]/self.stats.living[c]),
+            species_flesh_max[c]))
     end
     --]]
 end
