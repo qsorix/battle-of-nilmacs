@@ -127,6 +127,35 @@ local function create_game(args)
     return g
 end
 
+local function run_game(g, args, player_names, needed_players)
+    local turns_limit_reached = false
+
+    while not g:finished() do
+        g:turn()
+
+        if not args.dont_draw then
+            g:draw()
+        end
+
+        local living_players = 0
+        for _, player_name in ipairs(player_names) do
+            if g:count_living_creatures_of_species(player_name) ~= 0 then
+                living_players = living_players + 1
+            end
+        end
+        if living_players < needed_players then
+            break
+        end
+
+        if g.turn_number >= args.turns then
+            turns_limit_reached = true
+            break
+        end
+    end
+
+    return turns_limit_reached
+end
+
 local function main()
     local args = parse_arguments()
     local g = create_game(args)
@@ -137,52 +166,36 @@ local function main()
         end
     end
 
-    if args.qualification then
-        local player_name = load_species(g, args.player[1])
+    local player_names = {}
 
-        local turns_limit_reached = false
-
-        while not g:finished() do
-            g:turn()
-            if not args.dont_draw then
-                g:draw()
-            end
-            if g.turn_number >= args.turns then
-                turns_limit_reached = true
-                break
-            end
+    if args.qualification or args.tournament then
+        for _, path in ipairs(args.player) do
+            table.insert(player_names, load_species(g, path))
         end
+    end
+
+    if args.qualification then
+        local turns_limit_reached = run_game(g, args, player_names, 1)
 
         if turns_limit_reached and
-           g:count_living_creatures_of_species(player_name) > 0 then
-            print(player_name .. " passed qualifications")
+           g:count_living_creatures_of_species(player_names[1]) > 0 then
+            print(player_names[1] .. " passed qualifications")
             os.exit(0)
         else
-            print(player_name .. " failed qualifications")
+            print(player_names[1] .. " failed qualifications")
             os.exit(1)
         end
 
     elseif args.tournament then
-        local player_names = {}
-
-        for _, path in ipairs(args.player) do
-            table.insert(player_names, load_species(g, path))
-        end
-
-        while not g:finished() and g.turn_number < args.turns do
-            g:turn()
-            if not args.dont_draw then
-                g:draw()
-            end
-        end
+        run_game(g, args, player_names, 2)
 
         -- TODO(qsorix): what when no player survived?
 
         local best_score = nil
-        local best_player = nil
+        local best_player = "nobody"
         for _, name in ipairs(player_names) do
             if g:count_living_creatures_of_species(name) > 0 then
-                if (g.stats.scores[name] or 0) > (best_score or 0) then
+                if (g.stats.scores[name] or 0) >= (best_score or 0) then
                     best_score = g.stats.scores[name]
                     best_player = name
                 end
