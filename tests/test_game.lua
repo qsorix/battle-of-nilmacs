@@ -91,32 +91,11 @@ function test_game_is_finished_when_there_are_no_creatures()
     assert_true(g:finished())
 end
 
-function test_game_ends_when_all_living_creatures_are_of_the_same_species()
-    local g = Game:new()
-    local species={name="cat"}
-    g:add_creature(species)
-    g:add_creature(species)
-    assert_true(g:finished())
-end
-
-function test_game_is_active_while_there_are_at_least_two_living_species()
+function test_game_is_active_while_there_is_at_least_one_living_species()
     local g = Game:new()
     g:add_creature({name="cat"})
-    g:add_creature({name="dog"})
 
     assert_false(g:finished())
-end
-
-function test_game_ends_when_last_creature_of_another_species_dies()
-    local g = Game:new()
-    g:set_size(2,2)
-    local c1 = g:add_creature({name="cat"})
-    local c2 = g:add_creature({name="dog"})
-
-    g:creature_attack(c2, c1.safe)
-
-    assert_false(g:is_alive(c1))
-    assert_true(g:finished())
 end
 
 function test_eaten_creatures_are_removed_from_the_game()

@@ -375,13 +375,12 @@ function Game:kill_creature(c)
 end
 
 function Game:finished()
-    local living_species = 0
     for s in pairs(self.stats.living) do
         if self.stats.living[s] ~= 0 then
-            living_species = living_species + 1
+            return false
         end
     end
-    return living_species <= 1
+    return true
 end
 
 function Game:turn()
