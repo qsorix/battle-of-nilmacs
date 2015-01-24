@@ -178,16 +178,22 @@ function Game:draw()
     table.insert(result, "\27[1;1H");
     for y=self.size.y,1,-1 do
         for x=1,self.size.x,1 do
-            local mark
             local cell = self.grid[x][y]
+            local biggest = nil
             for i = 1, #cell do
                 local c = cell[i]
-                if not self:is_plant(c) or not mark then
-                    if c.alive then
-                        mark = c.color or '@'
-                    else
-                        mark = c.color_dead or '%'
-                    end
+                if (not biggest) or
+                   (not biggest.alive and c.alive) or
+                   (biggest.flesh < c.flesh) then
+                    biggest = c
+                end
+            end
+            local mark = nil
+            if biggest then
+                if biggest.alive then
+                    mark = biggest.color or '@'
+                else
+                    mark = biggest.color_dead or '%'
                 end
             end
             table.insert(result, mark or BG)
