@@ -148,11 +148,6 @@ function test_probability_of_a_successful_kill_depends_on_creatures_size()
         if not g:is_alive(c1) then
             kills = kills + 1
         end
-
-        -- resurect for another try
-        c1.energy = 100
-        c2.energy = 100
-        c1.alive = true
     end
 
     -- expected probabily is around 0.25
@@ -168,7 +163,7 @@ function test_creature_can_attack_only_creatures_it_sees()
     local c1 = g:add_creature_at_position({}, 1, 1)
     local c2 = g:add_creature_at_position({}, 1, 10)
 
-    g:creature_attack(c2, c1)
+    g:creature_attack(c2, c1.safe)
     assert_true(g:is_alive(c1))
 end
 
