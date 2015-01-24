@@ -7,7 +7,7 @@ species.initial_energy = 400
 local function only_bars(sees)
     local result = {}
     for _, c in ipairs(sees) do
-        if c.species == "bars" then
+        if c.name == "bars" then
             table.insert(result, c)
         end
     end

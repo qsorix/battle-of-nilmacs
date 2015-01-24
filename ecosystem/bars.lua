@@ -7,7 +7,7 @@ species.initial_energy = 29
 local function count_grass(sees)
     local count = 0
     for _, c in ipairs(sees) do
-        if c.species == "grass" then
+        if c.name == "grass" then
             count = count + 1
         end
     end

@@ -7,11 +7,11 @@ function distance(a, b)
     return math.max(math.abs(a.x-b.x), math.abs(a.y-b.y))
 end
 
-function closest(species, self, others)
+function closest(species_name, self, others)
     local dist = 1000
     local dx, dy, cr
     for _, c in ipairs(others) do
-        if c.species == species then
+        if c.name == species_name then
             local ndist = (c.x-self.x)+(c.y-self.y)
             if ndist < dist then
                 dx = c.x-self.x
@@ -24,11 +24,11 @@ function closest(species, self, others)
     return dx, dy, cr
 end
 
-function closest_alive(species, self, others)
+function closest_alive(species_name, self, others)
     local dist = 1000
     local dx, dy, cr
     for _, c in ipairs(others) do
-        if c.species == species and c.alive then
+        if c.name == species_name and c.alive then
             local ndist = distance(c, self)
             if ndist < dist then
                 dx = c.x-self.x

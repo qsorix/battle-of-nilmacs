@@ -15,7 +15,7 @@ function species.brain()
     -- tree will slowly die
     local sees = Action.Look(1)
     for _, c in ipairs(sees) do
-        if c.species == species.name and
+        if c.name == species.name and
            c.priority > Self.priority then
             return nil
         end

@@ -147,7 +147,7 @@ function test_breeding_adds_a_creature_of_the_same_species_and_brain()
     local c2 = g:creature_breed(c1, 1)
 
     g:turn()
-    assert_equal("breeder", c2.species)
+    assert_equal("breeder", c2.name)
     assert_equal(2, run_counter)
 end
 
