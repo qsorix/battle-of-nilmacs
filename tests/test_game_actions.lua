@@ -209,6 +209,16 @@ function test_creature_can_breed_spawning_new_creatures()
     assert_equal(2, g:count_living_creatures_of_species("cat"))
 end
 
+function test_creature_cannot_breed_with_negative_energy()
+    local g = Game:new()
+    local c = g:add_creature({name="cat",
+                              brain=function() return Decision.Breed(-10) end})
+
+    assert_equal(1, g:count_living_creatures_of_species("cat"))
+    g:turn()
+    assert_equal(0, g:count_living_creatures_of_species("cat"))
+end
+
 function test_creature_can_use_photosynthesis_to_restore_energy()
     local g = Game:new()
     local c = g:add_creature({plant=true,

@@ -629,13 +629,14 @@ end
 function Game:creature_breed(breeder, energy_for_offspring)
     local cost = self.energy_cost_breeding + energy_for_offspring
 
-    if breeder.energy < cost then
+    if energy_for_offspring < 0 or breeder.energy < cost then
         --[[
         io.stderr:write("Creature " .. breeder.species ..
                         " tries to breed without energy. Has: " ..
                         breeder.energy .. ", requires: " .. 
                         cost .. "\n")
         --]]
+        self:kill_creature(breeder)
         return nil
     end
 
