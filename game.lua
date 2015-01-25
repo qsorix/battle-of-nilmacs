@@ -68,9 +68,7 @@ function Game:new()
         -- creatures_safe keeps 'safe' read-only views on creatures, that are
         -- used inside brains. the purpose of this table is map from safe, back
         -- to normal creature tables
-        -- The actual 'safe' view is part of the creature, and creatures are
-        -- gathered in the creatures table, so here I go fully-weak.
-        creatures_safe = {__mode='kv'},
+        creatures_safe = {},
 
         species = {},
 
@@ -378,6 +376,7 @@ end
 
 function Game:remove_creature(c)
     self:remove_from_grid(c)
+    self.creatures_safe[c.safe] = nil
     self.creatures[c] = nil
     self.stats.count[c.name] = self.stats.count[c.name] - 1
     c.purge = true
